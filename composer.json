@@ -1,5 +1,5 @@
 {
-    "name": "tapbuy/lunu",
+    "name": "tapbuy/alma",
     "description": "Tapbuy Alma Payment for Magento 2 GraphQL",
     "type": "magento2-module",
     "version": "1.0.0",
