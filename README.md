@@ -9,6 +9,7 @@ This module provides a plugin that intercepts and modifies payment data for Alma
 ## Features
 
 - **Payment Data Enhancement**: Automatically adds custom return URLs and cancellation URLs to Alma payment requests
+- **Request Header Validation**: Validates Tapbuy requests using custom headers for enhanced security
 - **GraphQL Integration**: Designed to work seamlessly with Magento 2 GraphQL API
 - **Error Handling**: Graceful handling of serialization errors to prevent payment process interruption
 - **Flexible Configuration**: Uses additional payment information to customize payment flow URLs
@@ -69,21 +70,31 @@ The module uses Magento's plugin system to intercept the `Alma\MonthlyPayments\G
 
 When a payment is processed, the plugin:
 
-1. **Extracts Tapbuy Information**: Retrieves serialized Tapbuy data from payment additional information
-2. **Deserializes Data**: Safely unserializes the Tapbuy data using Magento's serializer
-3. **Maps URLs**: Maps Tapbuy URLs to Alma payment parameters:
+1. **Validates Request Headers**: Checks for the `X-Tapbuy-Call` header to ensure the request originates from Tapbuy
+2. **Extracts Tapbuy Information**: Retrieves serialized Tapbuy data from payment additional information
+3. **Deserializes Data**: Safely unserializes the Tapbuy data using Magento's serializer
+4. **Maps URLs**: Maps Tapbuy URLs to Alma payment parameters:
    - `accept_url` → `return_url`
    - `cancel_url` → `customer_cancel_url` and `failure_return_url`
-4. **Updates Payment Data**: Modifies the payment array with the new URL configurations
+5. **Updates Payment Data**: Modifies the payment array with the new URL configurations
 
 ### Error Handling
 
 The plugin includes robust error handling:
+- Validates request headers to ensure legitimate Tapbuy requests
 - Catches serialization exceptions
 - Prevents payment process interruption
-- Maintains original payment flow if Tapbuy data is unavailable
+- Maintains original payment flow if Tapbuy data is unavailable or headers are missing
 
 ## Configuration
+
+### Request Headers
+
+The module validates requests using the `X-Tapbuy-Call` header. This header must be present for the plugin to process Tapbuy payment modifications:
+
+```http
+X-Tapbuy-Call: 1
+```
 
 ### Payment Additional Information Format
 
@@ -146,6 +157,9 @@ The plugin is configured in `etc/di.xml`:
 - **Namespace**: `Tapbuy\Alma\Plugin`
 - **Purpose**: Modifies Alma payment data with Tapbuy-specific URLs
 - **Method**: `afterBuild()` - Plugin method that runs after the original build method
+- **Dependencies**: 
+  - `SerializerInterface` - For handling serialized payment data
+  - `RequestInterface` - For accessing HTTP request headers
 
 ## Troubleshooting
 
@@ -158,10 +172,16 @@ The plugin is configured in `etc/di.xml`:
 2. **Plugin Not Working**
    - Ensure DI compilation is up to date: `php bin/magento setup:di:compile`
    - Verify Alma module is installed and enabled
+   - Check that the `X-Tapbuy-Call` header is being sent with requests
 
 3. **Serialization Errors**
    - Check that Tapbuy data is properly serialized before storage
    - Verify JSON format if using JSON serialization
+
+4. **Headers Not Detected**
+   - Ensure the `X-Tapbuy-Call` header is included in HTTP requests
+   - Verify server configuration allows custom headers
+   - Check that headers are not being stripped by proxies or load balancers
 
 ### Logging
 
