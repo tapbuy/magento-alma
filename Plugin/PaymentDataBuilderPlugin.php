@@ -5,6 +5,7 @@ namespace Tapbuy\Alma\Plugin;
 use Alma\MonthlyPayments\Gateway\Request\PaymentDataBuilder;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\App\RequestInterface;
 
 class PaymentDataBuilderPlugin
 {
@@ -13,9 +14,21 @@ class PaymentDataBuilderPlugin
      */
     private $serializer;
 
-    public function __construct(SerializerInterface $serializer)
-    {
+    /**
+     * @var RequestInterface
+     */
+    private $request;
+
+    /**
+     * @param SerializerInterface $serializer
+     * @param RequestInterface $request
+     */
+    public function __construct(
+        SerializerInterface $serializer,
+        RequestInterface $request
+    ) {
         $this->serializer = $serializer;
+        $this->request = $request;
     }
 
     /**
@@ -31,12 +44,14 @@ class PaymentDataBuilderPlugin
         $paymentDO = SubjectReader::readPayment($buildSubject);
         $payment = $paymentDO->getPayment();
 
+        $isTapbuyCall = $this->request->getHeader('X-Tapbuy-Call');
+
         $tapbuyAdditionalInfoRaw = $payment->getAdditionalInformation('tapbuy');
 
-        if (!empty($tapbuyAdditionalInfoRaw)) {
+        if (!empty($tapbuyAdditionalInfoRaw) && $isTapbuyCall) {
             try {
                 $tapbuyAdditionalInfo = $this->serializer->unserialize($tapbuyAdditionalInfoRaw);
-                
+
                 $resultPayment = $result['payment'];
                 if (!empty($resultPayment) && is_array($tapbuyAdditionalInfo)) {
                     if (isset($tapbuyAdditionalInfo['accept_url'])) {
@@ -53,7 +68,7 @@ class PaymentDataBuilderPlugin
                 // This ensures that the plugin does not break the payment process
             }
         }
-        
+
         return $result;
     }
 }
