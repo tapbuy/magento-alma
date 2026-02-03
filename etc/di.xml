@@ -5,4 +5,11 @@
                 type="Tapbuy\Alma\Plugin\PaymentDataBuilderPlugin"
                 sortOrder="10"/>
     </type>
+    
+    <!-- Inject centralized Tapbuy Logger -->
+    <type name="Tapbuy\Alma\Plugin\PaymentDataBuilderPlugin">
+        <arguments>
+            <argument name="logger" xsi:type="object">Tapbuy\RedirectTracking\Logger\TapbuyLogger</argument>
+        </arguments>
+    </type>
 </config>
