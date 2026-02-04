@@ -5,9 +5,9 @@ namespace Tapbuy\Alma\Plugin;
 use Alma\MonthlyPayments\Gateway\Request\PaymentDataBuilder;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Framework\Serialize\SerializerInterface;
+use Tapbuy\RedirectTracking\Api\LoggerInterface;
 use Tapbuy\RedirectTracking\Api\TapbuyConstants;
 use Tapbuy\RedirectTracking\Api\TapbuyRequestDetectorInterface;
-use Tapbuy\RedirectTracking\Logger\TapbuyLogger;
 
 class PaymentDataBuilderPlugin
 {
@@ -17,7 +17,7 @@ class PaymentDataBuilderPlugin
     private $serializer;
 
     /**
-     * @var TapbuyLogger
+     * @var LoggerInterface
      */
     private $logger;
 
@@ -28,12 +28,12 @@ class PaymentDataBuilderPlugin
 
     /**
      * @param SerializerInterface $serializer
-     * @param TapbuyLogger $logger
+     * @param LoggerInterface $logger
      * @param TapbuyRequestDetectorInterface $requestDetector
      */
     public function __construct(
         SerializerInterface $serializer,
-        TapbuyLogger $logger,
+        LoggerInterface $logger,
         TapbuyRequestDetectorInterface $requestDetector
     ) {
         $this->serializer = $serializer;
