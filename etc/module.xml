@@ -3,7 +3,11 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="Tapbuy_Alma">
         <sequence>
+            <module name="Magento_Framework"/>
             <module name="Magento_GraphQl"/>
+            <module name="Magento_Payment"/>
+            <module name="Tapbuy_RedirectTracking"/>
+            <module name="Alma_MonthlyPayments"/>
         </sequence>
     </module>
 </config>
