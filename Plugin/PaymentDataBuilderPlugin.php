@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tapbuy\Alma\Plugin;
 
 use Alma\MonthlyPayments\Gateway\Request\PaymentDataBuilder;
