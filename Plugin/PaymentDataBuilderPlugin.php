@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tapbuy\Alma\Plugin;
 
 use Alma\MonthlyPayments\Gateway\Request\PaymentDataBuilder;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Framework\App\RequestInterface;
-use Tapbuy\RedirectTracking\Logger\TapbuyLogger;
+use Tapbuy\RedirectTracking\Api\LoggerInterface;
+use Tapbuy\RedirectTracking\Api\TapbuyConstants;
+use Tapbuy\RedirectTracking\Api\TapbuyRequestDetectorInterface;
 
 class PaymentDataBuilderPlugin
 {
@@ -16,28 +19,28 @@ class PaymentDataBuilderPlugin
     private $serializer;
 
     /**
-     * @var RequestInterface
-     */
-    private $request;
-
-    /**
-     * @var TapbuyLogger
+     * @var LoggerInterface
      */
     private $logger;
 
     /**
+     * @var TapbuyRequestDetectorInterface
+     */
+    private $requestDetector;
+
+    /**
      * @param SerializerInterface $serializer
-     * @param RequestInterface $request
-     * @param TapbuyLogger $logger
+     * @param LoggerInterface $logger
+     * @param TapbuyRequestDetectorInterface $requestDetector
      */
     public function __construct(
         SerializerInterface $serializer,
-        RequestInterface $request,
-        TapbuyLogger $logger
+        LoggerInterface $logger,
+        TapbuyRequestDetectorInterface $requestDetector
     ) {
         $this->serializer = $serializer;
-        $this->request = $request;
         $this->logger = $logger;
+        $this->requestDetector = $requestDetector;
     }
 
     /**
@@ -53,9 +56,9 @@ class PaymentDataBuilderPlugin
         $paymentDO = SubjectReader::readPayment($buildSubject);
         $payment = $paymentDO->getPayment();
 
-        $isTapbuyCall = $this->request->getHeader('X-Tapbuy-Call');
+        $isTapbuyCall = $this->requestDetector->isTapbuyCall();
 
-        $tapbuyAdditionalInfoRaw = $payment->getAdditionalInformation('tapbuy');
+        $tapbuyAdditionalInfoRaw = $payment->getAdditionalInformation(TapbuyConstants::PAYMENT_ADDITIONAL_INFO_KEY);
 
         if (!empty($tapbuyAdditionalInfoRaw) && $isTapbuyCall) {
             try {
