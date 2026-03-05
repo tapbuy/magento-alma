@@ -62,7 +62,7 @@ class PaymentDataBuilderPlugin
      */
     public function afterBuild(PaymentDataBuilder $subject, array $result, array $buildSubject): array
     {
-        if (!$this->requestDetector->isTapbuyCall() || !$this->config->isEnabled()) {
+        if (!$this->config->isEnabled() || !$this->requestDetector->isTapbuyCall()) {
             return $result;
         }
 
