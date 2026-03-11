@@ -7,6 +7,7 @@ namespace Tapbuy\Alma\Plugin;
 use Alma\MonthlyPayments\Gateway\Request\PaymentDataBuilder;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Framework\Serialize\SerializerInterface;
+use Tapbuy\RedirectTracking\Api\ConfigInterface;
 use Tapbuy\RedirectTracking\Api\LoggerInterface;
 use Tapbuy\RedirectTracking\Api\TapbuyConstants;
 use Tapbuy\RedirectTracking\Api\TapbuyRequestDetectorInterface;
@@ -29,18 +30,26 @@ class PaymentDataBuilderPlugin
     private $requestDetector;
 
     /**
+     * @var ConfigInterface
+     */
+    private $config;
+
+    /**
      * @param SerializerInterface $serializer
      * @param LoggerInterface $logger
      * @param TapbuyRequestDetectorInterface $requestDetector
+     * @param ConfigInterface $config
      */
     public function __construct(
         SerializerInterface $serializer,
         LoggerInterface $logger,
-        TapbuyRequestDetectorInterface $requestDetector
+        TapbuyRequestDetectorInterface $requestDetector,
+        ConfigInterface $config
     ) {
         $this->serializer = $serializer;
         $this->logger = $logger;
         $this->requestDetector = $requestDetector;
+        $this->config = $config;
     }
 
     /**
@@ -53,14 +62,16 @@ class PaymentDataBuilderPlugin
      */
     public function afterBuild(PaymentDataBuilder $subject, array $result, array $buildSubject): array
     {
+        if (!$this->config->isEnabled() || !$this->requestDetector->isTapbuyCall()) {
+            return $result;
+        }
+
         $paymentDO = SubjectReader::readPayment($buildSubject);
         $payment = $paymentDO->getPayment();
 
-        $isTapbuyCall = $this->requestDetector->isTapbuyCall();
-
         $tapbuyAdditionalInfoRaw = $payment->getAdditionalInformation(TapbuyConstants::PAYMENT_ADDITIONAL_INFO_KEY);
 
-        if (!empty($tapbuyAdditionalInfoRaw) && $isTapbuyCall) {
+        if (!empty($tapbuyAdditionalInfoRaw)) {
             try {
                 $tapbuyAdditionalInfo = $this->serializer->unserialize($tapbuyAdditionalInfoRaw);
 
