@@ -15,6 +15,17 @@ use Tapbuy\RedirectTracking\Api\TapbuyRequestDetectorInterface;
 class PaymentDataBuilderPlugin
 {
     /**
+     * Maps TapBuy additional-info keys to the Alma payment fields they populate.
+     * Add a new entry here to support additional URL redirections without modifying plugin logic.
+     *
+     * @var array<string, string[]>
+     */
+    private const URL_MAPPING = [
+        'accept_url' => ['return_url'],
+        'cancel_url'  => ['customer_cancel_url', 'failure_return_url'],
+    ];
+
+    /**
      * @var SerializerInterface
      */
     private $serializer;
@@ -77,22 +88,14 @@ class PaymentDataBuilderPlugin
 
                 $resultPayment = $result['payment'];
                 if (!empty($resultPayment) && is_array($tapbuyAdditionalInfo)) {
-                    $originalReturnUrl = $resultPayment['return_url'] ?? null;
-                    
-                    if (isset($tapbuyAdditionalInfo['accept_url'])) {
-                        $resultPayment['return_url'] = $tapbuyAdditionalInfo['accept_url'];
-                    }
-                    if (isset($tapbuyAdditionalInfo['cancel_url'])) {
-                        $resultPayment['customer_cancel_url'] = $tapbuyAdditionalInfo['cancel_url'];
-                        $resultPayment['failure_return_url'] = $tapbuyAdditionalInfo['cancel_url'];
-                    }
+                    $originalPayment = $resultPayment;
+                    $resultPayment = $this->applyUrlMapping($tapbuyAdditionalInfo, $resultPayment);
                     $result['payment'] = $resultPayment;
-                    
-                    $this->logger->info('Alma payment URLs modified for Tapbuy call', [
-                        'original_return_url' => $originalReturnUrl,
-                        'tapbuy_return_url' => $resultPayment['return_url'] ?? null,
-                        'tapbuy_cancel_url' => $resultPayment['customer_cancel_url'] ?? null,
-                    ]);
+
+                    $this->logger->info(
+                        'Alma payment URLs modified for Tapbuy call',
+                        $this->buildLogContext($tapbuyAdditionalInfo, $originalPayment, $resultPayment)
+                    );
                 }
             } catch (\Exception $e) {
                 $this->logger->logException('Failed to process Tapbuy additional info for Alma payment', $e);
@@ -100,5 +103,46 @@ class PaymentDataBuilderPlugin
         }
 
         return $result;
+    }
+
+    /**
+     * Applies URL_MAPPING to override Alma payment fields with TapBuy redirect URLs.
+     *
+     * @param array $tapbuyInfo Deserialized TapBuy additional information
+     * @param array $payment    Alma payment fields array
+     * @return array            Modified payment fields array
+     */
+    private function applyUrlMapping(array $tapbuyInfo, array $payment): array
+    {
+        foreach (self::URL_MAPPING as $tapbuyKey => $almaFields) {
+            if (isset($tapbuyInfo[$tapbuyKey])) {
+                foreach ($almaFields as $almaField) {
+                    $payment[$almaField] = $tapbuyInfo[$tapbuyKey];
+                }
+            }
+        }
+        return $payment;
+    }
+
+    /**
+     * Builds log context by comparing original and new payment fields for all mapped URLs.
+     *
+     * @param array $tapbuyInfo      Deserialized TapBuy additional information
+     * @param array $originalPayment Alma payment fields before mapping
+     * @param array $newPayment      Alma payment fields after mapping
+     * @return array                 Log context array
+     */
+    private function buildLogContext(array $tapbuyInfo, array $originalPayment, array $newPayment): array
+    {
+        $context = [];
+        foreach (self::URL_MAPPING as $tapbuyKey => $almaFields) {
+            if (isset($tapbuyInfo[$tapbuyKey])) {
+                foreach ($almaFields as $almaField) {
+                    $context['original_' . $almaField] = $originalPayment[$almaField] ?? null;
+                    $context['tapbuy_' . $almaField] = $newPayment[$almaField] ?? null;
+                }
+            }
+        }
+        return $context;
     }
 }
