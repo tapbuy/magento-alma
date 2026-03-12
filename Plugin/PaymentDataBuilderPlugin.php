@@ -22,7 +22,7 @@ class PaymentDataBuilderPlugin
      */
     private const URL_MAPPING = [
         'accept_url' => ['return_url'],
-        'cancel_url'  => ['customer_cancel_url', 'failure_return_url'],
+        'cancel_url' => ['customer_cancel_url', 'failure_return_url'],
     ];
 
     /**
@@ -92,10 +92,10 @@ class PaymentDataBuilderPlugin
                     $resultPayment = $this->applyUrlMapping($tapbuyAdditionalInfo, $resultPayment);
                     $result['payment'] = $resultPayment;
 
-                    $this->logger->info(
-                        'Alma payment URLs modified for Tapbuy call',
-                        $this->buildLogContext($tapbuyAdditionalInfo, $originalPayment, $resultPayment)
-                    );
+                    $logContext = $this->buildLogContext($tapbuyAdditionalInfo, $originalPayment, $resultPayment);
+                    if (!empty($logContext)) {
+                        $this->logger->info('Alma payment URLs modified for Tapbuy call', $logContext);
+                    }
                 }
             } catch (\Exception $e) {
                 $this->logger->logException('Failed to process Tapbuy additional info for Alma payment', $e);
