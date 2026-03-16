@@ -97,7 +97,7 @@ class PaymentDataBuilderPlugin
                         $this->logger->info('Alma payment URLs modified for Tapbuy call', $logContext);
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (\RuntimeException $e) {
                 $this->logger->logException('Failed to process Tapbuy additional info for Alma payment', $e);
             }
         }
