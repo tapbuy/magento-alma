@@ -98,9 +98,15 @@ class PaymentDataBuilderPlugin
                     }
                 }
             } catch (\InvalidArgumentException $e) {
-                $this->logger->logException('Failed to unserialize Tapbuy additional info for Alma payment (malformed data)', $e);
+                $this->logger->logException(
+                    'Failed to unserialize Tapbuy additional info for Alma payment (malformed data)',
+                    $e
+                );
             } catch (\RuntimeException $e) {
-                $this->logger->logException('Failed to process Tapbuy additional info for Alma payment (runtime error)', $e);
+                $this->logger->logException(
+                    'Failed to process Tapbuy additional info for Alma payment (runtime error)',
+                    $e
+                );
             }
         }
 
