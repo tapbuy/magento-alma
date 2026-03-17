@@ -26,41 +26,17 @@ class PaymentDataBuilderPlugin
     ];
 
     /**
-     * @var SerializerInterface
-     */
-    private $serializer;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * @var TapbuyRequestDetectorInterface
-     */
-    private $requestDetector;
-
-    /**
-     * @var ConfigInterface
-     */
-    private $config;
-
-    /**
      * @param SerializerInterface $serializer
      * @param LoggerInterface $logger
      * @param TapbuyRequestDetectorInterface $requestDetector
      * @param ConfigInterface $config
      */
     public function __construct(
-        SerializerInterface $serializer,
-        LoggerInterface $logger,
-        TapbuyRequestDetectorInterface $requestDetector,
-        ConfigInterface $config
+        private readonly SerializerInterface $serializer,
+        private readonly LoggerInterface $logger,
+        private readonly TapbuyRequestDetectorInterface $requestDetector,
+        private readonly ConfigInterface $config
     ) {
-        $this->serializer = $serializer;
-        $this->logger = $logger;
-        $this->requestDetector = $requestDetector;
-        $this->config = $config;
     }
 
     /**
