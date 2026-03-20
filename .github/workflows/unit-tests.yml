@@ -32,6 +32,12 @@ jobs:
           repository: tapbuy/magento-redirect-plugin
           path: redirect-tracking-module
 
+      - name: Checkout alma/module-payment dependency
+        uses: actions/checkout@v4
+        with:
+          repository: alma/alma-monthlypayments-magento2
+          path: alma-module-payment
+
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
@@ -63,6 +69,8 @@ jobs:
           mkdir -p ~/magento/vendor/tapbuy
           cp -r module ~/magento/vendor/tapbuy/alma
           cp -r redirect-tracking-module ~/magento/vendor/tapbuy/redirect-tracking
+          mkdir -p ~/magento/vendor/almapay
+          cp -r alma-module-payment ~/magento/vendor/almapay/alma-monthlypayments-magento2
 
       - name: Create test bootstrap
         run: |
@@ -73,6 +81,7 @@ jobs:
           $autoloader = include __DIR__ . '/../../vendor/autoload.php';
           $autoloader->addPsr4('Tapbuy\\Alma\\', __DIR__ . '/alma/');
           $autoloader->addPsr4('Tapbuy\\RedirectTracking\\', __DIR__ . '/redirect-tracking/');
+          $autoloader->addPsr4('Alma\\MonthlyPayments\\', __DIR__ . '/../almapay/alma-monthlypayments-magento2/');
           BOOTSTRAP
 
       - name: Run PHPUnit
