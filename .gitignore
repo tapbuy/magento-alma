@@ -16,3 +16,6 @@ Thumbs.db
 
 # PHPUnit
 *.phpunit.result.cache
+
+# Local Docker test credentials (copy auth.json.dist → auth.json and fill in)
+auth.json
