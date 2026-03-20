@@ -32,6 +32,12 @@ jobs:
           repository: tapbuy/magento-redirect-plugin
           path: redirect-tracking-module
 
+      - name: Checkout tapbuy/data-scrubber dependency
+        uses: actions/checkout@v4
+        with:
+          repository: tapbuy/data-scrubber
+          path: data-scrubber
+
       - name: Checkout alma/module-payment dependency
         uses: actions/checkout@v4
         with:
@@ -67,9 +73,14 @@ jobs:
       - name: Place module in Magento vendor
         run: |
           mkdir -p ~/magento/vendor/tapbuy
+          rm -rf ~/magento/vendor/tapbuy/alma
+          rm -rf ~/magento/vendor/tapbuy/redirect-tracking
+          rm -rf ~/magento/vendor/tapbuy/data-scrubber
           cp -r module ~/magento/vendor/tapbuy/alma
           cp -r redirect-tracking-module ~/magento/vendor/tapbuy/redirect-tracking
+          cp -r data-scrubber ~/magento/vendor/tapbuy/data-scrubber
           mkdir -p ~/magento/vendor/almapay
+          rm -rf ~/magento/vendor/almapay/alma-monthlypayments-magento2
           cp -r alma-module-payment ~/magento/vendor/almapay/alma-monthlypayments-magento2
 
       - name: Create test bootstrap
@@ -81,6 +92,7 @@ jobs:
           $autoloader = include __DIR__ . '/../../vendor/autoload.php';
           $autoloader->addPsr4('Tapbuy\\Alma\\', __DIR__ . '/alma/');
           $autoloader->addPsr4('Tapbuy\\RedirectTracking\\', __DIR__ . '/redirect-tracking/');
+          $autoloader->addPsr4('Tapbuy\\DataScrubber\\', __DIR__ . '/data-scrubber/src/');
           $autoloader->addPsr4('Alma\\MonthlyPayments\\', __DIR__ . '/../almapay/alma-monthlypayments-magento2/');
           BOOTSTRAP
 

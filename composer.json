@@ -30,6 +30,6 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "@php -r \"echo 'Run `make test` to run PHPUnit via Docker (matches CI environment).\\n'; exit(1);\""
     }
 }
