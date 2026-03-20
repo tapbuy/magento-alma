@@ -3,6 +3,7 @@
 # Expects volumes:
 #   /module                      — alma source (read-only)
 #   /tapbuy-redirect-tracking    — redirect-tracking source (read-only)
+#   /tapbuy-data-scrubber        — data-scrubber source (read-only)
 #   /thirdparty-alma             — alma/alma-monthlypayments-magento2 (read-only)
 set -euo pipefail
 
@@ -20,13 +21,19 @@ fi
 
 mkdir -p /magento/vendor/tapbuy
 rm -rf /magento/vendor/tapbuy/alma
+mkdir -p /magento/vendor/tapbuy/alma
+cp -rT /module /magento/vendor/tapbuy/alma
 rm -rf /magento/vendor/tapbuy/redirect-tracking
-cp -r /module /magento/vendor/tapbuy/alma
-cp -r /tapbuy-redirect-tracking /magento/vendor/tapbuy/redirect-tracking
+mkdir -p /magento/vendor/tapbuy/redirect-tracking
+cp -rT /tapbuy-redirect-tracking /magento/vendor/tapbuy/redirect-tracking
+rm -rf /magento/vendor/tapbuy/data-scrubber
+mkdir -p /magento/vendor/tapbuy/data-scrubber
+cp -rT /tapbuy-data-scrubber /magento/vendor/tapbuy/data-scrubber
 
 mkdir -p /magento/vendor/almapay
 rm -rf /magento/vendor/almapay/alma-monthlypayments-magento2
-cp -r /thirdparty-alma /magento/vendor/almapay/alma-monthlypayments-magento2
+mkdir -p /magento/vendor/almapay/alma-monthlypayments-magento2
+cp -rT /thirdparty-alma /magento/vendor/almapay/alma-monthlypayments-magento2
 
 cat > /magento/vendor/tapbuy/bootstrap.php << 'BOOTSTRAP'
 <?php
@@ -35,6 +42,7 @@ require_once __DIR__ . '/../../dev/tests/unit/framework/bootstrap.php';
 $autoloader = include __DIR__ . '/../../vendor/autoload.php';
 $autoloader->addPsr4('Tapbuy\\Alma\\', __DIR__ . '/alma/');
 $autoloader->addPsr4('Tapbuy\\RedirectTracking\\', __DIR__ . '/redirect-tracking/');
+$autoloader->addPsr4('Tapbuy\\DataScrubber\\', __DIR__ . '/data-scrubber/src/');
 $autoloader->addPsr4('Alma\\MonthlyPayments\\', __DIR__ . '/../almapay/alma-monthlypayments-magento2/');
 BOOTSTRAP
 

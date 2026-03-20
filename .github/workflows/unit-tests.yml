@@ -19,6 +19,10 @@ jobs:
 
     env:
       COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+      # Pinned refs — keep in sync with composer.json constraints
+      REDIRECT_TRACKING_REF: 'develop'   # tapbuy/redirect-tracking require: ^1.8.0
+      DATA_SCRUBBER_REF: 'develop'        # tapbuy/data-scrubber require: ^1.0
+      ALMA_MODULE_REF: 'v5.3.0'           # almapay/alma-monthlypayments-magento2 require: ^4.0 || ^5.0
 
     steps:
       - name: Checkout module
@@ -30,18 +34,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: tapbuy/magento-redirect-plugin
+          ref: ${{ env.REDIRECT_TRACKING_REF }}
           path: redirect-tracking-module
 
       - name: Checkout tapbuy/data-scrubber dependency
         uses: actions/checkout@v4
         with:
           repository: tapbuy/data-scrubber
+          ref: ${{ env.DATA_SCRUBBER_REF }}
           path: data-scrubber
 
       - name: Checkout alma/module-payment dependency
         uses: actions/checkout@v4
         with:
           repository: alma/alma-monthlypayments-magento2
+          ref: ${{ env.ALMA_MODULE_REF }}
           path: alma-module-payment
 
       - name: Setup PHP 8.3
