@@ -1,0 +1,111 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  unit-tests:
+    name: PHPUnit (PHP 8.3 / Magento 2.4.7-p5)
+    runs-on: ubuntu-latest
+
+    env:
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+      # Pinned refs — keep in sync with composer.json constraints
+      REDIRECT_TRACKING_REF: 'develop'   # tapbuy/redirect-tracking require: ^1.8.0
+      DATA_SCRUBBER_REF: 'develop'        # tapbuy/data-scrubber require: ^1.0
+      ALMA_MODULE_REF: 'v5.3.0'           # almapay/alma-monthlypayments-magento2 require: ^4.0 || ^5.0
+
+    steps:
+      - name: Checkout module
+        uses: actions/checkout@v4
+        with:
+          path: module
+
+      - name: Checkout redirect-tracking dependency
+        uses: actions/checkout@v4
+        with:
+          repository: tapbuy/magento-redirect-plugin
+          ref: ${{ env.REDIRECT_TRACKING_REF }}
+          path: redirect-tracking-module
+
+      - name: Checkout tapbuy/data-scrubber dependency
+        uses: actions/checkout@v4
+        with:
+          repository: tapbuy/data-scrubber
+          ref: ${{ env.DATA_SCRUBBER_REF }}
+          path: data-scrubber
+
+      - name: Checkout alma/module-payment dependency
+        uses: actions/checkout@v4
+        with:
+          repository: alma/alma-monthlypayments-magento2
+          ref: ${{ env.ALMA_MODULE_REF }}
+          path: alma-module-payment
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, ctype, curl, dom, gd, hash, iconv, intl, mbstring, openssl, pdo_mysql, simplexml, soap, xsl, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Magento vendor
+        id: cache-magento
+        uses: actions/cache@v4
+        with:
+          path: ~/magento
+          key: magento-2.4.7-p5-php83-v2
+
+      - name: Install Magento 2.4.7-p5
+        if: steps.cache-magento.outputs.cache-hit != 'true'
+        run: |
+          composer create-project \
+            --repository-url=https://repo.magento.com/ \
+            magento/project-community-edition=2.4.7-p5 ~/magento \
+            --no-dev --no-scripts --prefer-dist --no-interaction
+          cd ~/magento
+          composer config audit.block-insecure false
+          composer require --dev phpunit/phpunit:~9.6.0 --no-scripts --no-interaction
+
+      - name: Place module in Magento vendor
+        run: |
+          mkdir -p ~/magento/vendor/tapbuy
+          rm -rf ~/magento/vendor/tapbuy/alma
+          rm -rf ~/magento/vendor/tapbuy/redirect-tracking
+          rm -rf ~/magento/vendor/tapbuy/data-scrubber
+          cp -r module ~/magento/vendor/tapbuy/alma
+          cp -r redirect-tracking-module ~/magento/vendor/tapbuy/redirect-tracking
+          cp -r data-scrubber ~/magento/vendor/tapbuy/data-scrubber
+          mkdir -p ~/magento/vendor/almapay
+          rm -rf ~/magento/vendor/almapay/alma-monthlypayments-magento2
+          cp -r alma-module-payment ~/magento/vendor/almapay/alma-monthlypayments-magento2
+
+      - name: Create test bootstrap
+        run: |
+          cat > ~/magento/vendor/tapbuy/bootstrap.php << 'BOOTSTRAP'
+          <?php
+          declare(strict_types=1);
+          require_once __DIR__ . '/../../dev/tests/unit/framework/bootstrap.php';
+          $autoloader = include __DIR__ . '/../../vendor/autoload.php';
+          $autoloader->addPsr4('Tapbuy\\Alma\\', __DIR__ . '/alma/');
+          $autoloader->addPsr4('Tapbuy\\RedirectTracking\\', __DIR__ . '/redirect-tracking/');
+          $autoloader->addPsr4('Tapbuy\\DataScrubber\\', __DIR__ . '/data-scrubber/src/');
+          $autoloader->addPsr4('Alma\\MonthlyPayments\\', __DIR__ . '/../almapay/alma-monthlypayments-magento2/');
+          BOOTSTRAP
+
+      - name: Run PHPUnit
+        run: |
+          cd ~/magento
+          php vendor/bin/phpunit \
+            --bootstrap vendor/tapbuy/bootstrap.php \
+            vendor/tapbuy/alma/Test/Unit/
