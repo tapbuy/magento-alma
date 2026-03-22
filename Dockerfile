@@ -28,3 +28,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install global PHP code quality tools (used by `make phpmd`, `make phpcs`, `make lint`)
+ENV COMPOSER_HOME=/root/.composer
+RUN composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true \
+    && composer global require --no-interaction \
+        phpmd/phpmd \
+        squizlabs/php_codesniffer \
+        magento/magento-coding-standard
+ENV PATH="/root/.composer/vendor/bin:$PATH"

@@ -1,0 +1,62 @@
+name: Static Analysis
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  phpmd:
+    name: PHPMD
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout module
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHPMD
+        run: composer global require phpmd/phpmd --no-interaction
+
+      - name: Run PHPMD
+        run: phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude Test
+
+  phpcs:
+    name: PHPCS (Magento2)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout module
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHPCS + Magento2 standard
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require squizlabs/php_codesniffer magento/magento-coding-standard --no-interaction
+
+      - name: Run PHPCS
+        run: |
+          set -o pipefail
+          phpcs -s --extensions=php . | grep -v -E "^DEPRECATED|sniff is listening for"
