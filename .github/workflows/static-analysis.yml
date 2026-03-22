@@ -1,0 +1,60 @@
+name: Static Analysis
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  phpmd:
+    name: PHPMD
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout module
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHPMD
+        run: composer global require phpmd/phpmd:2.15.0 --no-interaction
+
+      - name: Run PHPMD
+        run: phpmd . text phpmd.xml
+
+  phpcs:
+    name: PHPCS (Magento2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout module
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHPCS + Magento2 standard
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require squizlabs/php_codesniffer:3.13.5 magento/magento-coding-standard:40 --no-interaction
+
+      - name: Run PHPCS
+        run: |
+          phpcs -s --extensions=php . | { grep -v -E "^DEPRECATED|sniff is listening for" || true; }
+          exit ${PIPESTATUS[0]}

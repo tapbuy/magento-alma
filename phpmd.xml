@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<ruleset name="tapbuy-alma"
+         xmlns="http://pmd.sf.net/ruleset/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+         xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+
+    <description>PHPMD ruleset for Tapbuy Alma module</description>
+
+    <!-- Exclude test directory from analysis -->
+    <exclude-pattern>*/Test/*</exclude-pattern>
+
+    <!--
+        Clean code: suppress BooleanArgumentFlag and StaticAccess.
+        - BooleanArgumentFlag: setCookie/removeCookie use bool flags intentionally — they mirror PHP's
+          setcookie() API and Magento's own CookieMetadata pattern. Enforcing SRP
+          here would require a separate object per flag combination, which is
+          over-engineered for this context.
+        - StaticAccess: Magento\Payment\Gateway\Helper\SubjectReader is a framework
+          utility deliberately designed for static access across all payment gateway plugins.
+          All core Magento payment plugin examples use it statically; DI injection is not
+          supported by its API.
+    -->
+    <rule ref="rulesets/cleancode.xml">
+        <exclude name="BooleanArgumentFlag"/>
+        <exclude name="StaticAccess"/>
+    </rule>
+
+    <!--
+        Code size: all default rules. CouplingBetweenObjects lives in design.xml
+        (overridden below), not codesize.xml.
+    -->
+    <rule ref="rulesets/codesize.xml"/>
+
+    <!-- Controversial: all default rules -->
+    <rule ref="rulesets/controversial.xml"/>
+
+    <!-- Design: all default rules, with CouplingBetweenObjects threshold raised to 14.
+         Model/Service.php aggregates several Magento framework objects (Curl, Json,
+         Url, Request, etc.) that Magento DI injects as a single cohesive unit. -->
+    <rule ref="rulesets/design.xml">
+        <exclude name="CouplingBetweenObjects"/>
+    </rule>
+    <rule ref="rulesets/design.xml/CouplingBetweenObjects">
+        <properties>
+            <property name="maximum" value="14"/>
+        </properties>
+    </rule>
+
+    <!--
+        Naming: relax length constraints.
+        - ShortVariable minimum → 2: allows $id in service/helper methods.
+        - LongVariable maximum → 30: Magento DI property names such as
+          $searchCriteriaBuilderFactory (29 chars) are dictated by the framework's
+          naming conventions and cannot be shortened without losing clarity.
+    -->
+    <rule ref="rulesets/naming.xml">
+        <exclude name="ShortVariable"/>
+        <exclude name="LongVariable"/>
+    </rule>
+    <rule ref="rulesets/naming.xml/ShortVariable">
+        <properties>
+            <property name="minimum" value="2"/>
+        </properties>
+    </rule>
+    <rule ref="rulesets/naming.xml/LongVariable">
+        <properties>
+            <property name="maximum" value="30"/>
+        </properties>
+    </rule>
+
+    <!--
+        Unused code: suppress UnusedFormalParameter.
+        Magento's ResolverInterface::resolve() mandates the full signature
+        ($field, $context, $info, $value, $args). Resolvers that don't use every
+        parameter still must declare them to satisfy the interface contract.
+        Plugin around/before/after methods similarly receive $subject/$proceed
+        even when not used directly.
+    -->
+    <rule ref="rulesets/unusedcode.xml">
+        <exclude name="UnusedFormalParameter"/>
+    </rule>
+
+</ruleset>
