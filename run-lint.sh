@@ -21,7 +21,7 @@ run_phpmd() {
     docker run --rm \
         -v "${SCRIPT_DIR}:/module:ro" \
         "$IMAGE" \
-        bash -c "cd /module && phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude Test"
+        bash -c "cd /module && phpmd . text phpmd.xml --exclude Test"
 }
 
 run_phpcs() {
